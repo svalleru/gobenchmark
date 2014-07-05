@@ -1,3 +1,5 @@
+//Execution Type: (asynchromous / concurrent / non-blocking) + (multicore / parallel)
+//Goal: Fetch JSON API response for every movie in titles var
 package main
 
 import (
@@ -22,15 +24,14 @@ func init() {
 	log.Print("setting MAXPROCS to..", numcpu)
 	runtime.GOMAXPROCS(numcpu) // Try to use all available CPUs.
 }
-func fetcher(c chan string, api_url string) string {
+func fetcher(api_url string) string {
 	resp, err := http.Get(api_url)
 	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close() //this'll be executed before func return
 	body, _ := ioutil.ReadAll(resp.Body)
-	c <- string(body)
-	return <-c
+	return string(body)
 }
 
 func main() {
@@ -42,18 +43,20 @@ func main() {
 			title := titles[i]
 			//for every v, spawn an async call
 			go func() {
-				c <- fetcher(c, string("http://www.omdbapi.com/?r=JSON&s="+url.QueryEscape(title)))
+				c <- fetcher(string("http://www.omdbapi.com/?r=JSON&s="+url.QueryEscape(title)))
 			}()
 		}
-
+		//timeout := time.After(1000 * time.Millisecond)
 		for i := 0; i < len(titles); i++ {
 			select {
 			case result := <-c:
 				results = append(results, result)
-				//you can add time out case if you want
+				//case <-timeout:
+				//log.Print("timed out.")
+				//continue
 			}
 		}
-		//log.Print(len(results))
+	    log.Print(len(results))
 		elapsed := time.Since(start)
 		log.Print("Time elapsed: ", elapsed)
 }

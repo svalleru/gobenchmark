@@ -1,3 +1,5 @@
+//Execution Type: synchromous / linear / blocking
+//Goal: Fetch JSON API response for every movie in titles var
 package main
 
 import (

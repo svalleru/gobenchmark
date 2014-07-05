@@ -1,3 +1,5 @@
+//Execution Type: asynchromous / concurrent / non-blocking
+//Goal: Fetch JSON API response for every movie in titles var
 package main
 
 import (
@@ -16,15 +18,14 @@ var titles = []string{
 	"Brazil", "Gattaca",
 }
 
-func fetcher(c chan string, api_url string) string {
+func fetcher(api_url string) string {
 	resp, err := http.Get(api_url)
 	if err != nil {
 		panic(err)
 	}
 	content, _ := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
-	c <- string(content)
-	return <-c
+	return string(content)
 }
 
 func main() {
@@ -36,7 +37,7 @@ func main() {
 			title := titles[i]
 			//for every v, spawn an async call
 			go func() {
-				c <- fetcher(c, string("http://www.omdbapi.com/?r=JSON&s="+url.QueryEscape(title)))
+				c <- fetcher(string("http://www.omdbapi.com/?r=JSON&s="+url.QueryEscape(title)))
 			}()
 		}
 
@@ -50,7 +51,7 @@ func main() {
 				//continue
 			}
 		}
-		//log.Print(len(results))
+		log.Print(len(results))
 		elapsed := time.Since(start)
 		log.Print("Time elapsed: ", elapsed)
 }
